@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 	"io"
 	"net/http"
 	"os"
@@ -126,9 +129,30 @@ func loadBody() string {
 	return string(body)
 }
 
+func parseHtml(htmlString string) string {
+	s := htmlString
+	doc, err := html.Parse(strings.NewReader(s))
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+	}
+	var buffer bytes.Buffer
+
+	for n := range doc.Descendants() {
+		if n.Type == html.ElementNode && n.DataAtom == atom.A {
+			for _, a := range n.Attr {
+				if a.Key == "href" {
+					buffer.WriteString(a.Val)
+				}
+			}
+		}
+	}
+
+	return buffer.String()
+}
+
 func main() {
 	// Load some text for our viewport
-	content := loadBody()
+	content := parseHtml(loadBody())
 
 	p := tea.NewProgram(
 		model{content: string(content)},
