@@ -125,8 +125,19 @@ func loadBody() string {
 	}
 
 	fmt.Println("Fetched HTML:")
-	fmt.Println(string(body))
 	return string(body)
+}
+
+func getText(node html.Node) string {
+	var buffer bytes.Buffer
+
+	for n := range node.Descendants() {
+		if n.Type == html.TextNode {
+			buffer.WriteString(n.Data)
+		}
+	}
+
+	return buffer.String()
 }
 
 func parseHtml(htmlString string) string {
@@ -138,11 +149,10 @@ func parseHtml(htmlString string) string {
 	var buffer bytes.Buffer
 
 	for n := range doc.Descendants() {
-		if n.Type == html.ElementNode && n.DataAtom == atom.A {
-			for _, a := range n.Attr {
-				if a.Key == "href" {
-					buffer.WriteString(a.Val)
-				}
+		if n.Type == html.ElementNode {
+			if n.DataAtom == atom.H2 {
+				fmt.Println(getText(*n))
+				buffer.WriteString(n.Data)
 			}
 		}
 	}
@@ -152,8 +162,9 @@ func parseHtml(htmlString string) string {
 
 func main() {
 	// Load some text for our viewport
-	content := parseHtml(loadBody())
+	// content := parseHtml(loadBody())
 
+	content := parseHtml(loadBody())
 	p := tea.NewProgram(
 		model{content: string(content)},
 		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
