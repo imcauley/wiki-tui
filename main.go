@@ -139,8 +139,11 @@ func loadBody() string {
 
 func parseTextFromNode(n html.Node) string {
 	if n.DataAtom == atom.A {
-		return Green + getText(*n.FirstChild) + Reset
-		n.RemoveChild(n.FirstChild)
+		return Green + n.FirstChild.Data + Reset
+	}
+
+	if n.Parent.DataAtom == atom.A {
+		return ""
 	}
 
 	if n.Type == html.TextNode {
