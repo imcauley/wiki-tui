@@ -20,6 +20,8 @@ var Red = "\033[31m"
 var Green = "\033[32m"
 var Newline = "\n"
 
+var pageTitle = ""
+
 var (
 	titleStyle = func() lipgloss.Style {
 		b := lipgloss.RoundedBorder()
@@ -35,9 +37,10 @@ var (
 )
 
 type model struct {
-	content  string
-	ready    bool
-	viewport viewport.Model
+	content   string
+	pageTitle string
+	ready     bool
+	viewport  viewport.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -95,7 +98,7 @@ func (m model) View() string {
 }
 
 func (m model) headerView() string {
-	title := titleStyle.Render("Mr. Pager")
+	title := titleStyle.Render(pageTitle)
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
@@ -133,7 +136,6 @@ func loadBody() string {
 		return ""
 	}
 
-	fmt.Println("Fetched HTML:")
 	return string(body)
 }
 
@@ -174,6 +176,12 @@ func parseHtml(htmlString string) string {
 	var buffer bytes.Buffer
 
 	for n := range doc.Descendants() {
+		for _, attr := range n.Attr {
+			if attr.Key == "class" && attr.Val == "mw-page-title-main" {
+				pageTitle = getText(*n)
+			}
+		}
+
 		if n.Type == html.ElementNode {
 			if n.DataAtom == atom.H2 {
 				buffer.WriteString(Red + getText(*n) + Reset + Newline)
@@ -194,7 +202,7 @@ func main() {
 
 	content := parseHtml(loadBody())
 	p := tea.NewProgram(
-		model{content: string(content)},
+		model{content: string(content), pageTitle: string(pageTitle)},
 		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
 		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
 	)
