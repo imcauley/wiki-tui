@@ -21,6 +21,7 @@ var Green = "\033[32m"
 var Newline = "\n"
 
 var pageTitle = ""
+var url = ""
 
 var (
 	titleStyle = func() lipgloss.Style {
@@ -110,8 +111,6 @@ func (m model) footerView() string {
 }
 
 func loadBody() string {
-	url := "https://en.wikipedia.org/wiki/Text-based_user_interface" // Replace with your target URL
-
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -199,6 +198,14 @@ func parseHtml(htmlString string) string {
 func main() {
 	// Load some text for our viewport
 	// content := parseHtml(loadBody())
+	if len(os.Args) < 2 {
+		fmt.Println("Please input a url")
+		return
+	}
+
+	fmt.Println(os.Args[0])
+
+	url = os.Args[1]
 
 	content := parseHtml(loadBody())
 	p := tea.NewProgram(
