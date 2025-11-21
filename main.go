@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/wordwrap"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"io"
@@ -68,7 +69,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// here.
 			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
 			m.viewport.YPosition = headerHeight
-			m.viewport.SetContent(m.content)
+
+			s := wordwrap.String(m.content, msg.Width-2)
+
+			m.viewport.SetContent(s)
 			m.ready = true
 		} else {
 			m.viewport.Width = msg.Width
@@ -133,13 +137,26 @@ func loadBody() string {
 	return string(body)
 }
 
+func parseTextFromNode(n html.Node) string {
+	if n.DataAtom == atom.A {
+		return Green + getText(*n.FirstChild) + Reset
+		n.RemoveChild(n.FirstChild)
+	}
+
+	if n.Type == html.TextNode {
+		return n.Data
+	}
+
+	return ""
+}
+
 func getText(node html.Node) string {
 	var buffer bytes.Buffer
 
+	buffer.WriteString(parseTextFromNode(node))
+
 	for n := range node.Descendants() {
-		if n.Type == html.TextNode {
-			buffer.WriteString(n.Data)
-		}
+		buffer.WriteString(parseTextFromNode(*n))
 	}
 
 	return buffer.String()
@@ -158,10 +175,10 @@ func parseHtml(htmlString string) string {
 			if n.DataAtom == atom.H2 {
 				buffer.WriteString(Red + getText(*n) + Reset + Newline)
 			}
+		}
 
-			if n.DataAtom == atom.P {
-				buffer.WriteString(getText(*n) + Newline)
-			}
+		if n.DataAtom == atom.P {
+			buffer.WriteString(getText(*n) + Newline)
 		}
 	}
 
