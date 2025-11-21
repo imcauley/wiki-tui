@@ -17,7 +17,7 @@ import (
 var Reset = "\033[0m"
 var Red = "\033[31m"
 var Green = "\033[32m"
-var Newline "\n"
+var Newline = "\n"
 
 var (
 	titleStyle = func() lipgloss.Style {
@@ -158,8 +158,8 @@ func parseHtml(htmlString string) string {
 			if n.DataAtom == atom.H2 {
 				buffer.WriteString(Red + getText(*n) + Reset + Newline)
 			}
-			
-			if n.DataAtom == atom.p {
+
+			if n.DataAtom == atom.P {
 				buffer.WriteString(getText(*n) + Newline)
 			}
 		}
