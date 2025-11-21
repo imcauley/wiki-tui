@@ -14,6 +14,11 @@ import (
 	"strings"
 )
 
+var Reset = "\033[0m"
+var Red = "\033[31m"
+var Green = "\033[32m"
+var Newline "\n"
+
 var (
 	titleStyle = func() lipgloss.Style {
 		b := lipgloss.RoundedBorder()
@@ -151,8 +156,11 @@ func parseHtml(htmlString string) string {
 	for n := range doc.Descendants() {
 		if n.Type == html.ElementNode {
 			if n.DataAtom == atom.H2 {
-				fmt.Println(getText(*n))
-				buffer.WriteString(n.Data)
+				buffer.WriteString(Red + getText(*n) + Reset + Newline)
+			}
+			
+			if n.DataAtom == atom.p {
+				buffer.WriteString(getText(*n) + Newline)
 			}
 		}
 	}
