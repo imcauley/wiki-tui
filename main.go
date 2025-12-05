@@ -16,6 +16,7 @@ import (
 )
 
 var Reset = "\033[0m"
+var Highlight = "\033[7m"
 var Red = "\033[31m"
 var Green = "\033[32m"
 var Newline = "\n"
@@ -38,14 +39,44 @@ var (
 )
 
 type model struct {
-	content   string
-	pageTitle string
-	ready     bool
-	viewport  viewport.Model
+	content          string
+	selected         int
+	pageTitle        string
+	ready            bool
+	mainContentWidth int
+	viewport         viewport.Model
 }
+
+type link struct {
+	position int
+	text     string
+	url      string
+}
+
+var pageLinks []link
 
 func (m model) Init() tea.Cmd {
 	return nil
+}
+
+func highlightLink(content string, index int) string {
+	var buffer bytes.Buffer
+	var linkCount = 0
+
+	var greenCompare = []rune(Green)
+
+	for _, rune := range content {
+		var char = string(rune)
+		if rune == greenCompare[0] {
+			if linkCount == index {
+				buffer.WriteString(Highlight)
+			}
+			linkCount += 1
+		}
+		buffer.WriteString(char)
+	}
+
+	return buffer.String()
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -58,6 +89,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if k := msg.String(); k == "ctrl+c" || k == "q" || k == "esc" {
 			return m, tea.Quit
+		}
+
+		if k := msg.String(); k == "n" {
+			m.selected += 2
+			s := highlightLink(wordwrap.String(m.content, m.mainContentWidth), m.selected)
+			m.viewport.SetContent(s)
 		}
 
 	case tea.WindowSizeMsg:
@@ -73,9 +110,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// here.
 			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
 			m.viewport.YPosition = headerHeight
+			m.mainContentWidth = msg.Width - 2
 
-			s := wordwrap.String(m.content, msg.Width-2)
-
+			s := highlightLink(wordwrap.String(m.content, m.mainContentWidth), m.selected)
 			m.viewport.SetContent(s)
 			m.ready = true
 		} else {
@@ -209,7 +246,7 @@ func main() {
 
 	content := parseHtml(loadBody())
 	p := tea.NewProgram(
-		model{content: string(content), pageTitle: string(pageTitle)},
+		model{content: string(content), pageTitle: string(pageTitle), selected: 0},
 		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
 		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
 	)

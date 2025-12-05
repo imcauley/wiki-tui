@@ -12,4 +12,4 @@ TODO
 - [ ] Search for page
 - [ ] Follow pages
 - [ ] Display tables
-
+- [ ] Create GH Actions release
